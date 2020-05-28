@@ -1,0 +1,9 @@
+dependencies:
+- name: grafana
+  repository: https://kubernetes-charts.storage.googleapis.com
+  version: 5.0.26
+- name: prometheus
+  repository: https://kubernetes-charts.storage.googleapis.com
+  version: 11.3.0
+digest: sha256:f55742b80fcb7849534fab13afaf6982f993f43f847c1e5e7640ac31c07be6a8
+generated: "2020-05-28T14:35:02.503146116+02:00"
