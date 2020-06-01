@@ -60,7 +60,7 @@ helm dependency update ./deployment-strategies-demo
 
 ## Recreate Update
 
-Install the awesome app
+Install the awesome app version 1.0.0
 
 ```bash
 helm install \
@@ -76,7 +76,7 @@ create load on the application
 while sleep 0.1; do curl "https://app-deploymentstrategies-demo-recreate.yoururl.ch/pod/"; done
 ```
 
-Trigger Deployment
+Trigger Deployment version 2.0.0
 
 ```bash
 helm upgrade \
@@ -98,7 +98,7 @@ helm delete recreate --namespace deployment-strategies-demo
 
 ## Rolling Update
 
-Install the awesome app
+Install the awesome app version 1.0.0
 
 ```bash
 helm install \
@@ -114,7 +114,7 @@ create load on the application
 while sleep 0.1; do curl "https://app-deploymentstrategies-demo-rolling.yoururl.ch/pod/"; done
 ```
 
-Trigger Deployment
+Trigger Deployment version 2.0.0
 
 ```bash
 helm upgrade \
@@ -131,6 +131,69 @@ Remove the app
 
 ```bash
 helm delete rolling --namespace deployment-strategies-demo
+```
+
+
+## Blue Green
+
+Install the awesome app Version 1
+
+```bash
+helm install \
+--namespace deployment-strategies-demo \
+--values ./blue-green/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green.yoururl.ch" \
+blue-green ./blue-green
+```
+
+Also install the Version 2
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./blue-green/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green.yoururl.ch" \
+--set version2.enabled=true \
+blue-green ./blue-green
+```
+
+create load on the application
+
+```bash
+while sleep 0.1; do curl "https://app-deploymentstrategies-demo-blue-green.yoururl.ch/pod/"; done
+```
+
+switch from Version 1 to Version 2
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./blue-green/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green.yoururl.ch" \
+--set version2.enabled=true \
+--set serviceselectorversion=2.0.0 \
+blue-green ./blue-green
+```
+
+Open the grafana dashboard an watch what happens
+
+Remove Version 1
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./blue-green/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green.yoururl.ch" \
+--set version1.enabled=false \
+--set version2.enabled=true \
+--set serviceselectorversion=2.0.0 \
+blue-green ./blue-green
+```
+
+Remove the app
+
+```bash
+helm delete blue-green --namespace deployment-strategies-demo
 ```
 
 
