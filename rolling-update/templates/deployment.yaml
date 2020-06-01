@@ -1,24 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "deployment-strategies-demo.fullname" . }}
+  name: {{ include "rolling-update.fullname" . }}
   labels:
-    {{- include "deployment-strategies-demo.labels" . | nindent 4 }}
+    {{- include "rolling-update.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+    type: RollingUpdate
   selector:
     matchLabels:
-      {{- include "deployment-strategies-demo.selectorLabels" . | nindent 6 }}
+      {{- include "rolling-update.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "deployment-strategies-demo.selectorLabels" . | nindent 8 }}
+        {{- include "rolling-update.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "deployment-strategies-demo.serviceAccountName" . }}
+      serviceAccountName: {{ include "rolling-update.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

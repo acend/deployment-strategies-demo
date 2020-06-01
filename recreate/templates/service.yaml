@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "5000"
+    prometheus.io/scrape: "true"
+  name: {{ include "recreate.fullname" . }}
+  labels:
+    {{- include "recreate.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "recreate.selectorLabels" . | nindent 4 }}

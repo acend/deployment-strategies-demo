@@ -34,7 +34,7 @@ kubectl get secret --namespace deployment-strategies-demo basicsetup-grafana -o 
 To reset the admin password use the following command inside the grafana container
 
 ```bash
-grafana-cli admin reset-admin-password --homepath /usr/share/grafana
+grafana-cli admin reset-admin-password <password>
 ```
 
 
@@ -50,6 +50,7 @@ helm upgrade \
 basicsetup ./deployment-strategies-demo
 ```
 
+
 ### Update Dependencies
 
 ```bash
@@ -57,6 +58,85 @@ helm dependency update ./deployment-strategies-demo
 ```
 
 
-## Demo
+## Recreate Update
 
-Run the following commands for the demo
+Install the awesome app
+
+```bash
+helm install \
+--namespace deployment-strategies-demo \
+--values ./recreate/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-recreate.yoururl.ch" \
+recreate ./recreate
+```
+
+create load on the application
+
+```bash
+while sleep 0.1; do curl "https://app-deploymentstrategies-demo-recreate.yoururl.ch/pod/"; done
+```
+
+Trigger Deployment
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./recreate/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-recreate.yoururl.ch" \
+--set awesomeappversion="2.0.0" \
+recreate ./recreate
+```
+
+Open the grafana dashboard an watch what happens
+
+Remove the app
+
+```bash
+helm delete recreate --namespace deployment-strategies-demo
+```
+
+
+## Rolling Update
+
+Install the awesome app
+
+```bash
+helm install \
+--namespace deployment-strategies-demo \
+--values ./rolling-update/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-rolling.yoururl.ch" \
+rolling ./rolling-update
+```
+
+create load on the application
+
+```bash
+while sleep 0.1; do curl "https://app-deploymentstrategies-demo-rolling.yoururl.ch/pod/"; done
+```
+
+Trigger Deployment
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./rolling-update/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-rolling.yoururl.ch" \
+--set awesomeappversion="2.0.0" \
+rolling ./rolling-update
+```
+
+Open the grafana dashboard an watch what happens
+
+Remove the app
+
+```bash
+helm delete rolling --namespace deployment-strategies-demo
+```
+
+
+## TODO
+
+Maybe want to use something like that as a graph
+
+
+sum(increase(flask_http_request_duration_seconds_count{app_name="acend-awesome-python", path="/pod/"}[30s])) by (app_version)
