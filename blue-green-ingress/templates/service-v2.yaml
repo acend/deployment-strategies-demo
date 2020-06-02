@@ -1,0 +1,22 @@
+{{- if .Values.version2.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/path: /metrics
+    prometheus.io/port: "5000"
+    prometheus.io/scrape: "true"
+  name: {{ include "blue-green-ingress.fullname" . }}-2
+  labels:
+    {{- include "blue-green-ingress.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "blue-green-ingress.selectorLabels" . | nindent 4 }}
+    version: 2.0.0
+{{- end }}

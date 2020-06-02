@@ -5,7 +5,7 @@
 replicaCount: 3
 replicaCount2: 3
 
-serviceselectorversion: 1.0.0
+ingressbackendservicename: "blue-green-ingress-1"
 
 version1:
   enabled: true
@@ -41,7 +41,7 @@ ingress:
     kubernetes.io/ingress.class: nginx-public
     kubernetes.io/tls-acme: "true"
   hosts:
-    - host: app-deploymentstrategies-demo-blue-green.cluster.local
+    - host: app-deploymentstrategies-demo-blue-green-ingress.cluster.local
       paths: 
       - /
   tls: []

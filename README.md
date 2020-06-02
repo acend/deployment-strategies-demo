@@ -134,7 +134,23 @@ helm delete rolling --namespace deployment-strategies-demo
 ```
 
 
-## Blue Green
+## Blue Green Version selector Labels
+
+This Version of the Blue Green Deployment mechanism uses selector Labels in the service definition to switch traffic from pods with Version 1 to Version 2 by updating the `version` label in the service definition:
+
+```yaml
+# Service
+# From version: 1.0.0
+  selector:
+    app.kubernetes.io/instance: blue-green
+    app.kubernetes.io/name: blue-green
+    version: 1.0.0
+# To version: 2.0.0
+  selector:
+    app.kubernetes.io/instance: blue-green
+    app.kubernetes.io/name: blue-green
+    version: 2.0.0
+```
 
 Install the awesome app Version 1
 
@@ -197,9 +213,103 @@ helm delete blue-green --namespace deployment-strategies-demo
 ```
 
 
+## Blue Green version ingress backend
+
+This Version of the Blue Green Deployment mechanism uses the backend configuration in the ingress definition to switch traffic from Service of Version 1 to Version 2 by updating the `version` label in the ingress definition:
+
+```yaml
+# Ingress
+# From version: 1.0.0
+spec:
+  rules:
+  - host: app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch
+    http:
+      paths:
+      - backend:
+          serviceName: blue-green-ingress-1
+# To version: 2.0.0
+spec:
+  rules:
+  - host: app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch
+    http:
+      paths:
+      - backend:
+          serviceName: blue-green-ingress-2
+```
+
+Install the awesome app Version 1
+
+```bash
+helm install \
+--namespace deployment-strategies-demo \
+--values ./blue-green-ingress/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch" \
+blue-green-ingress ./blue-green-ingress
+```
+
+Also install the Version 2
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./blue-green-ingress/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch" \
+--set version2.enabled=true \
+blue-green-ingress ./blue-green-ingress
+```
+
+create load on the application
+
+```bash
+while sleep 0.1; do curl "https://app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch/pod/"; done
+```
+
+switch from Version 1 to Version 2
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./blue-green-ingress/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch" \
+--set version2.enabled=true \
+--set ingressbackendservicename=blue-green-ingress-2 \
+blue-green-ingress ./blue-green-ingress
+```
+
+Open the grafana dashboard an watch what happens
+
+Remove Version 1
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./blue-green-ingress/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-blue-green-ingress.yoururl.ch" \
+--set version1.enabled=false \
+--set version2.enabled=true \
+--set ingressbackendservicename=blue-green-ingress-2 \
+blue-green-ingress ./blue-green-ingress
+```
+
+Remove the app
+
+```bash
+helm delete blue-green-ingress --namespace deployment-strategies-demo
+```
+
+
 ## TODO
 
 Maybe want to use something like that as a graph
 
-
+```
 sum(increase(flask_http_request_duration_seconds_count{app_name="acend-awesome-python", path="/pod/"}[30s])) by (app_version)
+```
+
+Add the following mechanisms:
+
+* Canary
+* AB Testing
+* Shadow
+
+Create Slidedeck
