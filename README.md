@@ -1,25 +1,39 @@
 # k8s Deployment strategies demo
 
-This Demo shows how the different deployment mechanisms on how to deploy applications to a kubernetes cluster work.
+This demo explains the different kubernetes deployment mechanisms.
+
+In this demo we use helm 3 to deploy the kubernetes resources on the cluster.
+
+The demo consists of the following components:
+
+* prometheus deployment: a slim prometheus server is being deployed and will collect metrics from the deployed application
+* grafana: Grafana visualizes the collected metrics and therefore the different deployment mechanisms
+* grafana-dashboard: The demo dashboard is deployed alongside with grafana
+* acend awesome app: this app will be deployed on the cluster in different versions to demonstrate the deployment mechanisms
 
 
-## Basic Setup
+## Prerequisites
 
-Create a namespace
+* Install the helm 3 cli tool
+
+
+## Setup
+
+The whole demo will run in its own namespace.
+
 
 ```bash
 kubectl create namespace deployment-strategies-demo
 ```
 
-Deploy the basic infrastructure() Prometheus, Grafana and our awesome application) using helm 3.
+Deploy the basic infrastructure Prometheus, Grafana and our awesome application) using helm 3.
 
-You'll need to set the proper Hostnames and Url
+You'll need to set the proper Hostnames and url
 
 ```bash
 helm install \
 --namespace deployment-strategies-demo \
 --values ./deployment-strategies-demo/values.yaml \
---set ingress.hosts[0].host="app-deploymentstrategies-demo.yoururl.ch" \
 --set grafana.ingress.hosts[0].[0]="app-deploymentstrategies-demo.yoururl.ch" \
 --set grafana.'grafana\.ini'.grafana_net.url="grafana-deploymentstrategies-demo.yoururl.ch" \
 basicsetup ./deployment-strategies-demo
@@ -38,27 +52,23 @@ grafana-cli admin reset-admin-password <password>
 ```
 
 
-### Upgrade Release
+### Update Infrastructure Dependencies
 
-```bash
-helm upgrade \
---namespace deployment-strategies-demo \
---values ./deployment-strategies-demo/values.yaml \
---set ingress.hosts[0].host="app-deploymentstrategies-demo.yoururl.ch" \
---set grafana.ingress.hosts[0]="grafana-deploymentstrategies-demo.yoururl.ch" \
---set grafana.'grafana\.ini'.grafana_net.url="grafana-deploymentstrategies-demo.yoururl.ch" \
-basicsetup ./deployment-strategies-demo
-```
+**This part is not part of the demo and just documentation purposes.**
 
-
-### Update Dependencies
+To update the dependencies of the demo infrastructure we can use.
 
 ```bash
 helm dependency update ./deployment-strategies-demo
 ```
 
 
-## Recreate Update
+## Demo Deployment Mechanisms
+
+The actual demo:
+
+
+### Recreate Update
 
 Install the awesome app version 1.0.0
 
@@ -96,7 +106,7 @@ helm delete recreate --namespace deployment-strategies-demo
 ```
 
 
-## Rolling Update
+### Rolling Update
 
 Install the awesome app version 1.0.0
 
@@ -134,7 +144,7 @@ helm delete rolling --namespace deployment-strategies-demo
 ```
 
 
-## Blue Green Version selector Labels
+### Blue Green Version selector Labels
 
 This Version of the Blue Green Deployment mechanism uses selector Labels in the service definition to switch traffic from pods with Version 1 to Version 2 by updating the `version` label in the service definition:
 
@@ -213,7 +223,7 @@ helm delete blue-green --namespace deployment-strategies-demo
 ```
 
 
-## Blue Green version ingress backend
+### Blue Green version ingress backend
 
 This Version of the Blue Green Deployment mechanism uses the backend configuration in the ingress definition to switch traffic from Service of Version 1 to Version 2 by updating the `version` label in the ingress definition:
 
@@ -298,7 +308,7 @@ helm delete blue-green-ingress --namespace deployment-strategies-demo
 ```
 
 
-## Canary Releasing
+### Canary Releasing
 
 The Canary Releasing Deployment mechanism uses the nginx configuration in the ingress definition to let a specific part of the traffic to the backend service 2, while the rest, still goes to version 1:
 
@@ -388,7 +398,7 @@ helm delete canary --namespace deployment-strategies-demo
 ```
 
 
-## AB Testing
+### AB Testing
 
 The AB Testing deployment mechanism uses the nginx configuration in the ingress definition to let a specific part of the traffic (for example when a specific HTTP Header is sent) to the backend service 2, while the rest, still goes to version 1:
 
@@ -481,7 +491,8 @@ Remove the app
 helm delete ab-testing --namespace deployment-strategies-demo
 ```
 
-## Shadow
+
+### Shadow
 
 Currently the nginx ingress is not able to shadow traffic. In this case you'll have to use a different ingress implementation like istio.
 The basic idea behind this case is, to be able to route prod traffic to the prod pods and also to the new version for testing.
@@ -494,9 +505,5 @@ Maybe want to use something like that as a graph
 ```
 sum(increase(flask_http_request_duration_seconds_count{app_name="acend-awesome-python", path="/pod/"}[30s])) by (app_version)
 ```
-
-Add the following mechanisms:
-
-* AB Testing
 
 Create Slidedeck
