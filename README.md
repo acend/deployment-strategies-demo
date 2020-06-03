@@ -388,6 +388,105 @@ helm delete canary --namespace deployment-strategies-demo
 ```
 
 
+## AB Testing
+
+The AB Testing deployment mechanism uses the nginx configuration in the ingress definition to let a specific part of the traffic (for example when a specific HTTP Header is sent) to the backend service 2, while the rest, still goes to version 1:
+
+```yaml
+# Ingress
+# Canary annotations
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-by-header: "APP_VERSION_2_0_0"
+```
+
+Install the awesome app Version 1
+
+```bash
+helm install \
+--namespace deployment-strategies-demo \
+--values ./ab-testing/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+ab-testing ./ab-testing
+```
+
+Also install the Version 2
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./ab-testing/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+--set version2.enabled=true \
+ab-testing ./ab-testing
+```
+
+create twice  load on the application
+
+```bash
+while sleep 0.2; do curl "https://app-deploymentstrategies-demo-ab-testing.yoururl.ch/pod/"; done
+```
+
+```bash
+while sleep 0.2; do curl -H "abtesting: always" "https://app-deploymentstrategies-demo-ab-testing.yoururl.ch/pod/"; done
+```
+
+Deploy AB Ingress, 10% of the traffic gets routed to the new version
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./ab-testing/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+--set version2.enabled=true \
+--set ingressab.enabled=true \
+--set ingressab.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+ab-testing ./ab-testing
+```
+
+Open the grafana dashboard and watch what happens
+
+After successful verifying of the new version, remove ab ingress and switch all traffic to version 2
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./ab-testing/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+--set version2.enabled=true \
+--set ingressab.enabled=false \
+--set ingressab.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+--set ingressbackendservicename="ab-testing-2" \
+ab-testing ./ab-testing
+```
+
+Remove Version 1
+
+```bash
+helm upgrade \
+--namespace deployment-strategies-demo \
+--values ./ab-testing/values.yaml \
+--set ingress.hosts[0].host="app-deploymentstrategies-demo-ab-testing.yoururl.ch" \
+--set version1.enabled=false \
+--set version2.enabled=true \
+--set ingressab.enabled=false \
+--set ingressbackendservicename="ab-testing-2" \
+ab-testing ./ab-testing
+```
+
+Remove the app
+
+```bash
+helm delete ab-testing --namespace deployment-strategies-demo
+```
+
+## Shadow
+
+Currently the nginx ingress is not able to shadow traffic. In this case you'll have to use a different ingress implementation like istio.
+The basic idea behind this case is, to be able to route prod traffic to the prod pods and also to the new version for testing.
+
+
 ## TODO
 
 Maybe want to use something like that as a graph
@@ -399,6 +498,5 @@ sum(increase(flask_http_request_duration_seconds_count{app_name="acend-awesome-p
 Add the following mechanisms:
 
 * AB Testing
-* Shadow
 
 Create Slidedeck
